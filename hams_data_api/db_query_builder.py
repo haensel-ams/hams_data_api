@@ -40,6 +40,8 @@ from hams_data_api.graph_class import *
 
 
 class QueryBuilder:
+
+
     def __init__(self, db_details):
         """
             Query Builder class that takes db_details dictionary, specifying the dimensions and relations
@@ -47,6 +49,10 @@ class QueryBuilder:
             Also requires the graph_class.py file to be in the same directory.
 
         """
+
+        self.aggregation_metric_mapping = {
+            "count_distinct": "count(distinct {metric} )"
+        }
 
         # Get necessary dictionaries from db_details
         try:
@@ -565,15 +571,27 @@ class QueryBuilder:
 
         return select_str
 
-    @staticmethod
-    def create_select_metrics(metrics_dict):
+    def create_select_metrics(self, metrics_dict):
         """
             Function to add the metrics to the select statement (including their aggregators)
         """
+
         measures_str = ","
 
         measures_list = []
         for metric, aggregator_list in metrics_dict.items():
+
+            if aggregator_list[1] in self.aggregation_metric_mapping.keys():
+                
+                measures_list += [
+                    self.aggregation_metric_mapping[aggregator_list[1]].format(metric = aggregator_list[0])
+                    + " as "
+                    + str(aggregator_list[1])
+                    + "_"
+                    + metric
+                ]
+                continue
+
             measures_list += [
                 aggregator_list[1]
                 + "("
@@ -693,13 +711,6 @@ class QueryBuilder:
         table_prefix, condition = self.get_dimension_table_prefix(cond["dimension"])
 
         condition_with_prefix = self.add_prefix_to_dimension(condition, table_prefix)
-
-        # if "{prefix}" in condition:
-        #     condition_with_prefix = re.sub(
-        #         pattern="{prefix}", repl=table_prefix, string=condition
-        #     )
-        # else:
-        #     condition_with_prefix = table_prefix + "." + condition
 
         if cond["rule"].lower() == "between":
             where_str = (

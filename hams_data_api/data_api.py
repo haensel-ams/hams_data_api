@@ -105,6 +105,7 @@ class DataAPI:
         "sum": "sum",
         "max": "max",
         "min": "min",
+        "count_distinct": "nunique"
     }
 
     def __init__(self, db_details, db_credentials):
@@ -204,10 +205,13 @@ class DataAPI:
         except:
             current_request_dict["Metrics"] = {}
 
+        current_request_metric_names = []
+        for key, value in current_request_metrics.items():
+            current_request_metric_names.append(value + '_' + key)
+
         # Create list of all fields we need
-        current_request_fields = current_request_dimensions + list(
-            current_request_metrics.keys()
-        )
+        current_request_fields = current_request_dimensions + current_request_metric_names
+
 
         # Get IHC Split from request and using default one if does not exist
         try:
