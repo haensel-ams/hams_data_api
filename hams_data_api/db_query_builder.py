@@ -581,26 +581,53 @@ class QueryBuilder:
         measures_list = []
         for metric, aggregator_list in metrics_dict.items():
 
-            if aggregator_list[1] in self.aggregation_metric_mapping.keys():
+            if type(aggregator_list[1]) == type([]):
+
+                for aggregator in aggregator_list[1]:
+
+                    if aggregator in self.aggregation_metric_mapping.keys():
                 
+                        measures_list += [
+                            self.aggregation_metric_mapping[aggregator].format(metric = aggregator_list[0])
+                            + " as "
+                            + str(aggregator)
+                            + "_"
+                            + metric
+                        ]
+                        continue
+
+                    measures_list += [
+                        aggregator
+                        + "("
+                        + aggregator_list[0]
+                        + ") as "
+                        + str(aggregator)
+                        + "_"
+                        + metric
+                    ]
+            else:
+
+                if aggregator_list[1] in self.aggregation_metric_mapping.keys():
+                    
+                    measures_list += [
+                        self.aggregation_metric_mapping[aggregator_list[1]].format(metric = aggregator_list[0])
+                        + " as "
+                        + str(aggregator_list[1])
+                        + "_"
+                        + metric
+                    ]
+                    continue
+
                 measures_list += [
-                    self.aggregation_metric_mapping[aggregator_list[1]].format(metric = aggregator_list[0])
-                    + " as "
+                    aggregator_list[1]
+                    + "("
+                    + aggregator_list[0]
+                    + ") as "
                     + str(aggregator_list[1])
                     + "_"
                     + metric
                 ]
-                continue
-
-            measures_list += [
-                aggregator_list[1]
-                + "("
-                + aggregator_list[0]
-                + ") as "
-                + str(aggregator_list[1])
-                + "_"
-                + metric
-            ]
+        
         measures_str = ", ".join(measures_list) + "  "
 
         return measures_str

@@ -153,6 +153,10 @@ class DataAPI:
 
         try:
             requested_database = current_request_dict["Database"]
+            if requested_database == 'data_api':
+                data_api_flag = True
+            else:
+                data_api_flag = False
         except:
             log.exception(
                 "Could not find specified database in request, please check request dict"
@@ -207,20 +211,25 @@ class DataAPI:
 
         current_request_metric_names = []
         for key, value in current_request_metrics.items():
-            current_request_metric_names.append(value + '_' + key)
+            if type(value) == type([]):
+                for val in value:
+                    current_request_metric_names.append(val + '_' + key)
+                continue
+            else:
+                current_request_metric_names.append(value + '_' + key)
 
         # Create list of all fields we need
         current_request_fields = current_request_dimensions + current_request_metric_names
 
-
-        # Get IHC Split from request and using default one if does not exist
-        try:
-            ihc_split = current_request_dict["IHC_Split"]
-        except:
-            log.info(
-                "IHC Split not specified (Key 'IHC_Split'), using default one (1/3, 1/3, 1/3) if necessary"
-            )
-            ihc_split = [1 / 3, 1 / 3, 1 / 3]
+        # Get IHC Split from request if we do not have a data api request and using default one if does not exist
+        if not data_api_flag:
+            try:
+                ihc_split = current_request_dict["IHC_Split"]
+            except:
+                log.info(
+                    "IHC Split not specified (Key 'IHC_Split'), using default one (1/3, 1/3, 1/3) if necessary"
+                )
+                ihc_split = [1 / 3, 1 / 3, 1 / 3]
 
         # Get database details for currently requested database
         try:
@@ -242,7 +251,7 @@ class DataAPI:
 
         # Handle Custom Dimensions in the request
         simplified_request_dict, custom_dimensions_mapping, get_rid_of_limit = self.prepare_request_for_custom_dimensions(
-            current_request_dict
+            current_request_dict, data_api_flag
         )
 
         # Handle Limit in the request, if we have a limit and custom metrics we need to apply it after the pandas groupby
@@ -298,9 +307,16 @@ class DataAPI:
                 except:
                     pass
 
-            return df_groupby
+            df_final = self.sort_dataframe_columns(current_request_fields, df_groupby)
+
+            return df_final
 
         return query_string
+
+    def sort_dataframe_columns(self, current_request_fields, df):
+
+        return df[current_request_fields]
+
 
     def apply_groupby_operation(self, df, custom_dimensions_mapping):
         """
@@ -356,7 +372,7 @@ class DataAPI:
 
         return df
 
-    def prepare_request_for_custom_dimensions(self, request_dict):
+    def prepare_request_for_custom_dimensions(self, request_dict, data_api_flag):
         """
             Loops over custom dimensions available in the Data API and if they are in the
             request replaces them with their respective necessary columns.
@@ -373,6 +389,9 @@ class DataAPI:
         """
 
         request_copy = request_dict.copy()
+
+        if data_api_flag:
+            return request_copy, {}, False
 
         # Get lists of dimensions and metrics
         current_dimensions = request_copy["Dimensions"]
