@@ -24,6 +24,8 @@ import pandas as pd
 
 import numpy as np
 
+import copy
+
 import itertools
 
 import sys
@@ -148,6 +150,8 @@ class DataAPI:
         """
             pass
         """
+        # Default IHC Split
+        ihc_split = [1 / 3, 1 / 3, 1 / 3]
 
         current_request_dict = copy.deepcopy(request_dict)
 
@@ -158,10 +162,11 @@ class DataAPI:
             else:
                 data_api_flag = False
         except:
-            log.exception(
-                "Could not find specified database in request, please check request dict"
+            log.warning(
+                "Could not find specified database in request, using 'data_api' one if possible"
             )
-            return None
+            requested_database = 'data_api'
+            data_api_flag = True
 
         try:
             utilDB = db_mysql.database_handler(
@@ -173,6 +178,20 @@ class DataAPI:
         except:
             log.exception("Could not initialize database handler")
             return None
+
+        # Get Report Type
+        requested_report = None
+
+        if data_api_flag:
+            try:
+                requested_report = current_request_dict["Report"]
+                try:
+                    self.database_details[requested_database]["reports"][requested_report]
+                except:
+                    log.exception("Could not find the specified Report Type: " + str(requested_report))
+                    return None
+            except:
+                requested_report = None
 
         # check if DirectQuery is not empty
         if current_request_dict.get("DirectQuery", "") != "":
@@ -231,9 +250,13 @@ class DataAPI:
                 )
                 ihc_split = [1 / 3, 1 / 3, 1 / 3]
 
-        # Get database details for currently requested database
+        # Get database details for currently requested database and filter by report if applicable
         try:
-            current_database_details = self.database_details[requested_database]
+            current_database_details = copy.deepcopy(self.database_details[requested_database])
+            if requested_report != None:
+                table_list = [current_database_details["reports"][requested_report]]
+                table_dimensions = current_database_details["tables_dimensions"]
+                current_database_details["tables_dimensions"] = dict((k, table_dimensions[k]) for k in table_list if k in table_dimensions)
         except:
             log.exception(
                 "Could not find specified database: "
@@ -273,6 +296,12 @@ class DataAPI:
         except:
             log.exception("Could not create query string")
             return None
+
+        # print(query_string)
+
+        # query_string += "AND (ACJ.Conv_Date BETWEEN '2019-04-16' AND '2019-04-16')"
+        
+        # print(query_string)
 
         # Query DB if we are not in Sandbox Mode
         if not sandbox_mode:

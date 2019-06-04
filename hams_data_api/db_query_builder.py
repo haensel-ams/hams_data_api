@@ -174,7 +174,7 @@ class QueryBuilder:
 
         return dimension_with_prefix
 
-    def get_dimension_table_prefix(self, dimension):
+    def get_dimension_table_prefix(self, dimension, where_statement = False):
         """
             Function to get table prefix and (potentially remapped) dimension
             for a given dimension. Requires the dimension to be in one of the
@@ -183,24 +183,50 @@ class QueryBuilder:
             Returns [table prefix, (remapped) dimension] (list)
         """
 
-        new_dimension = dimension
-        dimension_table = ""
-        for key, value in self.tables_dimensions_remapped.items():
-            if (dimension in value) and (key in self.necessary_tables):
-                new_dimension = str.split(value[dimension], " AS ")[0]
-                dimension_table = key
+        if where_statement:
 
-        if dimension_table == "":
-            for table in self.necessary_tables:
-                if dimension in self.tables_dimensions[table]:
-                    dimension_table = table
-                    break
+            result_list = []
 
-        if dimension_table not in self.necessary_tables:
-            log.exception("Condition not in tables, please check request!")
-            return None
+            new_dimension = dimension
+            dimension_table = ""
+            for key, value in self.tables_dimensions_remapped.items():
+                if (dimension in value) and (key in self.necessary_tables):
+                    new_dimension = str.split(value[dimension], " AS ")[0]
+                    dimension_table = key
+                    result_list.append([self.table_prefix[dimension_table], new_dimension])
+
+            if dimension_table == "":
+                for table in self.necessary_tables:
+                    if dimension in self.tables_dimensions[table]:
+                        dimension_table = table
+                        result_list.append([self.table_prefix[dimension_table], new_dimension])
+                        # break
+
+            if dimension_table not in self.necessary_tables:
+                log.exception("Condition not in tables, please check request!")
+                return None
+            else:
+                return result_list
+
         else:
-            return [self.table_prefix[dimension_table], new_dimension]
+            new_dimension = dimension
+            dimension_table = ""
+            for key, value in self.tables_dimensions_remapped.items():
+                if (dimension in value) and (key in self.necessary_tables):
+                    new_dimension = str.split(value[dimension], " AS ")[0]
+                    dimension_table = key
+
+            if dimension_table == "":
+                for table in self.necessary_tables:
+                    if dimension in self.tables_dimensions[table]:
+                        dimension_table = table
+                        break
+
+            if dimension_table not in self.necessary_tables:
+                log.exception("Condition not in tables, please check request!")
+                return None
+            else:
+                return [self.table_prefix[dimension_table], new_dimension]
 
     def remap_table(self, table_name):
         """
@@ -733,35 +759,49 @@ class QueryBuilder:
             Returns:
                 - where_str (str)
         """
-        where_str = ""
 
-        table_prefix, condition = self.get_dimension_table_prefix(cond["dimension"])
+        results_list = self.get_dimension_table_prefix(cond["dimension"], where_statement=True)
 
-        condition_with_prefix = self.add_prefix_to_dimension(condition, table_prefix)
+        where_str_orig = ""
 
-        if cond["rule"].lower() == "between":
-            where_str = (
-                condition_with_prefix
-                + " BETWEEN '"
-                + '" AND "'.join(cond["value"])
-                + "'"
-            )
-            where_str = where_str.replace('"', "'")
-        elif (cond["rule"].lower() == "is not null") or (
-            cond["rule"].lower() == "is null"
-        ):
-            where_str = condition_with_prefix + " " + cond["rule"]
-        else:
-            where_str = (
-                condition_with_prefix
-                + " "
-                + cond["rule"]
-                + " '"
-                + str(cond["value"])
-                + "'"
-            )
+        counter = 0
+        for where_statement in results_list:
 
-        return where_str
+            if counter > 0:
+                where_str_orig += ") AND ("
+
+            condition = where_statement[1]
+            table_prefix = where_statement[0]
+            
+            condition_with_prefix = self.add_prefix_to_dimension(condition, table_prefix)
+
+            if cond["rule"].lower() == "between":
+                where_str = (
+                    condition_with_prefix
+                    + " BETWEEN '"
+                    + '" AND "'.join(cond["value"])
+                    + "'"
+                )
+                where_str = where_str.replace('"', "'")
+            elif (cond["rule"].lower() == "is not null") or (
+                cond["rule"].lower() == "is null"
+            ):
+                where_str = condition_with_prefix + " " + cond["rule"]
+            else:
+                where_str = (
+                    condition_with_prefix
+                    + " "
+                    + cond["rule"]
+                    + " '"
+                    + str(cond["value"])
+                    + "'"
+                )
+
+            counter += 1
+
+            where_str_orig += where_str
+
+        return where_str_orig
 
     def create_groupby_statement(self, groupby_clause):
         """
