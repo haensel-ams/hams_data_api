@@ -257,6 +257,10 @@ class DataAPI:
                 table_list = [current_database_details["reports"][requested_report]]
                 table_dimensions = current_database_details["tables_dimensions"]
                 current_database_details["tables_dimensions"] = dict((k, table_dimensions[k]) for k in table_list if k in table_dimensions)
+            if requested_report == None and data_api_flag:
+                not_table_list = list(current_database_details["reports"].values())
+                table_dimensions = current_database_details["tables_dimensions"]
+                current_database_details["tables_dimensions"] = {k:v for k,v in table_dimensions.items() if k not in not_table_list}
         except:
             log.exception(
                 "Could not find specified database: "
