@@ -538,7 +538,7 @@ class DataAPI:
 
         try:
             df_copy["Adjusted_Init_Conv"] = (
-                df_copy["Adjusted_Initializer_Frac"] * ihc_split[0]
+                df_copy["Adjusted_Initializer_Frac"]
             )
 
         except:
@@ -555,7 +555,6 @@ class DataAPI:
                 df_copy[["Adjusted_Holder_Frac", "Adjusted_VirtualHolder_Frac"]].sum(
                     axis=1
                 )
-                * ihc_split[1]
             )
         except:
             return df
@@ -568,7 +567,7 @@ class DataAPI:
 
         try:
             df_copy["Adjusted_Closer_Conv"] = (
-                df_copy["Adjusted_Closer_Frac"] * ihc_split[2]
+                df_copy["Adjusted_Closer_Frac"]
             )
 
         except:
@@ -607,7 +606,7 @@ class DataAPI:
         df_copy = df.copy()
 
         try:
-            df_copy["Init_Conv"] = df_copy["Initializer_Frac"] * ihc_split[0]
+            df_copy["Init_Conv"] = df_copy["Initializer_Frac"]
         except:
             return df
 
@@ -620,7 +619,6 @@ class DataAPI:
         try:
             df_copy["Holder_Conv"] = (
                 df_copy[["Holder_Frac", "VirtualHolder_Frac"]].sum(axis=1)
-                * ihc_split[1]
             )
 
         except:
@@ -633,7 +631,7 @@ class DataAPI:
         df_copy = df.copy()
 
         try:
-            df_copy["Closer_Conv"] = df_copy["Closer_Frac"] * ihc_split[2]
+            df_copy["Closer_Conv"] = df_copy["Closer_Frac"]
 
         except:
             return df
@@ -674,7 +672,7 @@ class DataAPI:
 
         try:
             df_copy["Init_Rev"] = (
-                df_copy["Initializer_Frac"] * ihc_split[0] * df_copy["Revenue"]
+                df_copy["Initializer_Frac"] * df_copy["Revenue"]
             )
         except:
             return df
@@ -688,7 +686,6 @@ class DataAPI:
         try:
             df_copy["Holder_Rev"] = (
                 df_copy[["Holder_Frac", "VirtualHolder_Frac"]].sum(axis=1)
-                * ihc_split[1]
                 * df_copy["Revenue"]
             )
         except:
@@ -702,7 +699,7 @@ class DataAPI:
 
         try:
             df_copy["Closer_Rev"] = (
-                df_copy["Closer_Frac"] * ihc_split[2] * df_copy["Revenue"]
+                df_copy["Closer_Frac"] * df_copy["Revenue"]
             )
 
         except:
@@ -750,7 +747,7 @@ class DataAPI:
 
         try:
             df_copy["Adjusted_Init_Rev"] = (
-                df_copy["Adjusted_Initializer_Frac"] * ihc_split[0] * df_copy["Revenue"]
+                df_copy["Adjusted_Initializer_Frac"] * df_copy["Revenue"]
             )
         except:
             return df
@@ -766,7 +763,6 @@ class DataAPI:
                 df_copy[["Adjusted_Holder_Frac", "Adjusted_VirtualHolder_Frac"]].sum(
                     axis=1
                 )
-                * ihc_split[1]
                 * df_copy["Revenue"]
             )
 
@@ -781,7 +777,7 @@ class DataAPI:
 
         try:
             df_copy["Adjusted_Closer_Rev"] = (
-                df_copy["Adjusted_Closer_Frac"] * ihc_split[2] * df_copy["Revenue"]
+                df_copy["Adjusted_Closer_Frac"] * df_copy["Revenue"]
             )
         except:
             return df
