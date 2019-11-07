@@ -150,6 +150,7 @@ class DataAPI:
         """
             pass
         """
+
         # Default IHC Split
         ihc_split = [1 / 3, 1 / 3, 1 / 3]
 
@@ -157,15 +158,15 @@ class DataAPI:
 
         try:
             requested_database = current_request_dict["Database"]
-            if requested_database == 'data_api':
+            if requested_database == 'data_summary':
                 data_api_flag = True
             else:
                 data_api_flag = False
         except:
             log.warning(
-                "Could not find specified database in request, using 'data_api' one if possible"
+                "Could not find specified database in request, using 'data_summary' one if possible"
             )
-            requested_database = 'data_api'
+            requested_database = 'data_summary'
             data_api_flag = True
 
         try:
@@ -300,12 +301,6 @@ class DataAPI:
         except:
             log.exception("Could not create query string")
             return None
-
-        # print(query_string)
-
-        # query_string += "AND (ACJ.Conv_Date BETWEEN '2019-04-16' AND '2019-04-16')"
-        
-        # print(query_string)
 
         # Query DB if we are not in Sandbox Mode
         if not sandbox_mode:
