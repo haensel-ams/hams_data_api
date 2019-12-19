@@ -203,7 +203,7 @@ class QueryBuilder:
                         # break
 
             if dimension_table not in self.necessary_tables:
-                log.exception("Condition not in tables, please check request!")
+                log.exception("Condition " + dimension_table + " not in tables, please check request!")
                 return None
             else:
                 return result_list
@@ -328,7 +328,8 @@ class QueryBuilder:
         filter_dimensions = []
         try:
             for filter in filter_clause:
-                filter_dimensions.append(filter["filters"][0]["dimension"])
+                for or_filter in filter["filters"]:
+                    filter_dimensions.append(or_filter['dimension'])
         except:
             log.exception(
                 "Could not extract filter dimensions from request, please make sure the format is correct!"
